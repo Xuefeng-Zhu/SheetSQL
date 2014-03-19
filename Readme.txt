@@ -36,3 +36,5 @@ I also use code from homework2, but I modify and rewrite most of them.
 I add an advanced feature called fast select. The way to use it is to select the range of table want to query. Run SQL query by using key word RANGE for FROM source. And the query will perform on the range you selected. The reason I want to delevep this advanced feature is prodive a convient way to run query on the result returned by previous SQL Query.
 
 The link to the project is https://docs.google.com/spreadsheet/ccc?key=0AlMMHFOg-bRZdHlJSlV5VXpfbElZSHY2c05iem5mR3c&usp=sharing
+
+
