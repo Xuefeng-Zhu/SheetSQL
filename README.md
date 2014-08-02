@@ -1,3 +1,5 @@
+The link to the project is [demo](https://docs.google.com/spreadsheet/ccc?key=0AlMMHFOg-bRZdHlJSlV5VXpfbElZSHY2c05iem5mR3c&usp=sharing)
+
 ## Overview
 The SQL implementation is based on Google sheet by storing data directly on Google Sheet.
 
@@ -42,6 +44,5 @@ https://github.com/forward/sql-parser to parse Select statement
 I also use code from homework2, but I modify and rewrite most of them.
 
 
-The link to the project is [demo](https://docs.google.com/spreadsheet/ccc?key=0AlMMHFOg-bRZdHlJSlV5VXpfbElZSHY2c05iem5mR3c&usp=sharing)
 
 
