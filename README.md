@@ -1,26 +1,28 @@
+## Overview
 The SQL implementation is based on Google sheet by storing data directly on Google Sheet.
 
+##Feature
 It surpports following SQL statement
-1: CREATE TABLE
-2: DROP TABLE
-3: ALTER TABLE
-4: INSERT INTO
-5: DELETE FROM
-6: UPDATE statements.
-7: SELECT
+1. CREATE TABLE
+2. DROP TABLE
+3. ALTER TABLE
+4. INSERT INTO
+5. DELETE FROM
+6. UPDATE statements.
+7. SELECT
 
-In the Select, it support 
-1: Math operation, like -,+,/. 
-2: Aggregate Function, like MAX, MIN, COUNT, AVG, SUM
-3: DISTINCT *, DISTINCT column 
-4: FROM 
-5: JOIN, LEFT JOIN, RIGHT JOIN, ON
-6: UNION
-7: WHERE, AND, OR, IN, LIKE, IS NULL, IS NOT NULL
-8: GROUP BY
-9: HAVING
-10: ORDER BY
-11: LIMIT
+In the **Select**, it support 
+1. Math operation, like -,+,/. 
+2. Aggregate Function, like MAX, MIN, COUNT, AVG, SUM
+3. DISTINCT *, DISTINCT column 
+4. FROM 
+5. JOIN, LEFT JOIN, RIGHT JOIN, ON
+6. UNION
+7. WHERE, AND, OR, IN, LIKE, IS NULL, IS NOT NULL
+8. GROUP BY
+9. HAVING
+10. ORDER BY
+11. LIMIT
 
 A long example can be 
 SELECT DISTINCT a+1, b, MIN(c) FROM table1 JOIN table 2 WHERE (a = 1 AND b  LIKE  '%dads') OR c IN  (SELECT c FROM table4) GROUP BY a,b HAVING AVG(c) > 5 AND MAX(c) < 10 ORDER BY a DESC LIMIT 20  UNION SELECT a+1, b, MIN(c) FROM table 3 GROUP BY a,b  
