@@ -43,6 +43,7 @@ https://github.com/dsferruzza/simpleSqlParser to parse Insert, Update, Delete St
 https://github.com/forward/sql-parser to parse Select statement
 I also use code from homework2, but I modify and rewrite most of them.
 
-
+##Licence
+MIT
 
 
