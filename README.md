@@ -3,6 +3,7 @@ The SQL implementation is based on Google sheet by storing data directly on Goog
 
 ##Feature
 It surpports following SQL statement
+
 1. CREATE TABLE
 2. DROP TABLE
 3. ALTER TABLE
@@ -12,6 +13,7 @@ It surpports following SQL statement
 7. SELECT
 
 In the **Select**, it support 
+
 1. Math operation, like -,+,/. 
 2. Aggregate Function, like MAX, MIN, COUNT, AVG, SUM
 3. DISTINCT *, DISTINCT column 
