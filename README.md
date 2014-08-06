@@ -40,8 +40,10 @@ The way to run the SQL statement is to click SQL in the menu OR Type `=SQL()` di
 
 ##Thanks
 I use two github open source projects for the parser. 
-*. https://github.com/dsferruzza/simpleSqlParser to parse Insert, Update, Delete Statement
-*. https://github.com/forward/sql-parser to parse Select statement
+
+*  https://github.com/dsferruzza/simpleSqlParser to parse Insert, Update, Delete Statement
+*  https://github.com/forward/sql-parser to parse Select statement
+
 I also use code from homework2, but I modify and rewrite most of them.
 
 ##Licence
