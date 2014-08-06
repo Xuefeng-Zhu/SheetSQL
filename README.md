@@ -36,7 +36,7 @@ A long example can be
 ```SELECT DISTINCT a+1, b, MIN(c) FROM table1 JOIN table 2 WHERE (a = 1 AND b  LIKE  '%dads') OR c IN  (SELECT c FROM table4) GROUP BY a,b HAVING AVG(c) > 5 AND MAX(c) < 10 ORDER BY a DESC LIMIT 20  UNION SELECT a+1, b, MIN(c) FROM table 3 GROUP BY a,b```  
 I also have provided examples in the sheet for legible statement. 
 
-The way to run the SQL statement is to click SQL in the menu OR Type =SQL() directly in cell.
+The way to run the SQL statement is to click SQL in the menu OR Type `=SQL()` directly in cell.
 
 ##Thanks
 I use two github open source projects for the parser. 
