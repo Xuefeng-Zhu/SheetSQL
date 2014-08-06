@@ -32,6 +32,7 @@ I add an advanced feature called fast select. The way to use it is to select the
 
 ##Example
 A long example can be 
+
 ```SELECT DISTINCT a+1, b, MIN(c) FROM table1 JOIN table 2 WHERE (a = 1 AND b  LIKE  '%dads') OR c IN  (SELECT c FROM table4) GROUP BY a,b HAVING AVG(c) > 5 AND MAX(c) < 10 ORDER BY a DESC LIMIT 20  UNION SELECT a+1, b, MIN(c) FROM table 3 GROUP BY a,b```  
 I also have provided examples in the sheet for legible statement. 
 
