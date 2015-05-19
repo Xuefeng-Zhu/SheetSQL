@@ -44,7 +44,6 @@ I use two github open source projects for the parser.
 *  [simpleSqlParser](https://github.com/dsferruzza/simpleSqlParser) to parse Insert, Update, Delete Statement
 *  [sql-parser](https://github.com/forward/sql-parser) to parse Select statement
 
-I also use code from homework2, but I modify and rewrite most of them.
 
 ##Licence
 MIT
