@@ -2,12 +2,14 @@ function createTable(input) {
   input = input.split(" ");
   var name = input[2];
   var attrs = input[3];
-  attrs = attrs.slice(1, attrs.length-1).split(",");
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.insertSheet(name, ss.getNumSheets());
-  sheet.appendRow(attrs);
-  var cells = sheet.getRange(1, 1, 1, attrs.length);
-  cells.setFontWeight("bold");
+  if (attrs != undefined) {
+    attrs = attrs.slice(1, attrs.length-1).split(",");
+    sheet.appendRow(attrs);
+    var cells = sheet.getRange(1, 1, 1, attrs.length);
+    cells.setFontWeight("bold");
+  }
 }
 
 function dropTable(input)
