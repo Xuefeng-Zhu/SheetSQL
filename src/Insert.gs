@@ -15,37 +15,49 @@ function insert(input) {
   var headers = tableArray[1];
 
   if (plan.columns === null) {
-    // Positional insert: validate value count matches column count
-    if (headers.length !== plan.values.length) {
-      throw new Error("The number of columns does not match");
-    }
-    sheetIO_writeRows(plan.table, [plan.values]);
-  } else {
-    // Column-mapped insert: validate column count matches value count
-    if (plan.columns.length !== plan.values.length) {
-      throw new Error("The number of colums does not match the number of values");
-    }
-
-    // Map values to correct column positions
-    var row = [];
-    for (var c = 0; c < headers.length; c++) {
-      row.push("");
-    }
-
-    var mappedCount = 0;
-    for (var i = 0; i < plan.columns.length; i++) {
-      var colIndex = findInArray_(headers, plan.columns[i]);
-      if (colIndex === -1) {
-        throw new Error("The columns do not match");
+    // Positional insert: validate value count matches column count per row
+    var outputRows = [];
+    for (var r = 0; r < plan.rows.length; r++) {
+      if (headers.length !== plan.rows[r].length) {
+        throw new Error("The number of columns does not match");
       }
-      row[colIndex] = plan.values[i];
-      mappedCount++;
+      outputRows.push(plan.rows[r]);
     }
+    sheetIO_writeRows(plan.table, outputRows);
+  } else {
+    // Column-mapped insert: validate column count matches value count per row
+    var outputRows = [];
+    for (var r = 0; r < plan.rows.length; r++) {
+      var values = plan.rows[r];
+      if (plan.columns.length !== values.length) {
+        throw new Error("The number of colums does not match the number of values");
+      }
 
-    if (mappedCount !== plan.columns.length) {
-      throw new Error("The columns do not match");
+      // Reject duplicate target columns
+      var seenColumns = {};
+      for (var i = 0; i < plan.columns.length; i++) {
+        if (seenColumns.hasOwnProperty(plan.columns[i])) {
+          throw new Error("Duplicate column: " + plan.columns[i]);
+        }
+        seenColumns[plan.columns[i]] = true;
+      }
+
+      // Map values to correct column positions
+      var row = [];
+      for (var c = 0; c < headers.length; c++) {
+        row.push("");
+      }
+
+      for (var i = 0; i < plan.columns.length; i++) {
+        var colIndex = findInArray_(headers, plan.columns[i]);
+        if (colIndex === -1) {
+          throw new Error("The columns do not match");
+        }
+        row[colIndex] = values[i];
+      }
+
+      outputRows.push(row);
     }
-
-    sheetIO_writeRows(plan.table, [row]);
+    sheetIO_writeRows(plan.table, outputRows);
   }
 }

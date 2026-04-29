@@ -278,6 +278,20 @@ test('column-mapped insert', function () {
   assert.strictEqual(values[1][2], 60000);
 });
 
+test('insert throws on duplicate columns in column-mapped insert', function () {
+  const mockApp = createMockSpreadsheetApp({
+    employees: [
+      ['id', 'name', 'salary'],
+    ],
+  });
+  const ctx = loadExecutorContext(mockApp);
+
+  assertThrowsMessage(
+    function () { ctx.insert("INSERT INTO employees (name, name) VALUES ('Alice', 'Bob')"); },
+    'Duplicate column: name'
+  );
+});
+
 test('insert throws on column count mismatch', function () {
   const mockApp = createMockSpreadsheetApp({
     employees: [
