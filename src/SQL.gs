@@ -1,50 +1,84 @@
 var SQL_SHEET_NAME = 'SQL';
 var SQL_SUCCESS_SUFFIX = ' success';
+var SQL_MENU_NAME = 'SQL';
+var SQL_MAX_QUERY_LENGTH = 50000;
 
-function onOpen() {
-  var ss = SpreadsheetApp.getActive();
-  var items = [
-    {name: 'Show prompt', functionName: 'showPrompt'},
-    {name: 'Clear History', functionName: 'warning'}
-  ];
-  ss.addMenu('SQL', items);
+function onOpen(e) {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu(SQL_MENU_NAME)
+      .addItem('Show prompt', 'showPrompt')
+      .addItem('Clear History', 'warning')
+      .addToUi();
+}
+
+function onInstall(e) {
+  onOpen(e);
 }
 
 function showPrompt() {
-  var result = Browser.inputBox(
-      'Google Sheet based SQL',
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.prompt(
+      'Google Sheets based SQL',
       'Please enter SQL statement you want to execute:',
-      Browser.Buttons.OK_CANCEL);
+      ui.ButtonSet.OK_CANCEL);
 
-  if (result === 'cancel') {
-    Browser.msgBox('Thanks for using! Bye!');
+  if (response.getSelectedButton() !== ui.Button.OK) {
     return;
   }
 
-  var outputRows = SQL(result);
+  var query = response.getResponseText();
+  var outputRows = SQL(query);
   var sheet = getOrCreateSqlSheet();
   sheet.activate();
 
-  for (var i = 0; i < outputRows.length; i++) {
-    sheet.appendRow(outputRows[i]);
+  if (outputRows && outputRows.length > 0) {
+    appendOutputRows_(sheet, outputRows);
   }
   sheet.appendRow([' ']);
 }
 
+
+function appendOutputRows_(sheet, outputRows) {
+  var normalizedRows = normalizeRows_(outputRows);
+  sheet.getRange(sheet.getLastRow() + 1, 1, normalizedRows.length, normalizedRows[0].length)
+      .setValues(normalizedRows);
+}
+
+function normalizeRows_(rows) {
+  var maxColumns = 0;
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].length > maxColumns) {
+      maxColumns = rows[i].length;
+    }
+  }
+
+  var normalized = [];
+  for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    var row = rows[rowIndex].slice();
+    while (row.length < maxColumns) {
+      row.push('');
+    }
+    normalized.push(row);
+  }
+
+  return normalized;
+}
+
 function warning() {
-  var result = Browser.msgBox(
+  var ui = SpreadsheetApp.getUi();
+  var result = ui.alert(
       'Please confirm',
       'Are you sure you want to clear all the history?',
-      Browser.Buttons.YES_NO);
+      ui.ButtonSet.YES_NO);
 
-  if (result === 'yes') {
-    var sheet = SpreadsheetApp.getActiveSheet();
+  if (result === ui.Button.YES) {
+    var sheet = getOrCreateSqlSheet();
     sheet.clear();
-    Browser.msgBox('History Cleared.');
+    ui.alert('History cleared.');
     return;
   }
 
-  Browser.msgBox('User Canceled.');
+  ui.alert('User canceled.');
 }
 
 function getOrCreateSqlSheet() {
@@ -56,7 +90,6 @@ function getOrCreateSqlSheet() {
   return sheet;
 }
 
-
 /**
 * Execute the SQL query
 *
@@ -67,6 +100,10 @@ function SQL(input) {
   var statement = normalizeStatement(input);
   if (!statement) {
     return [['Syntax invalid: empty statement']];
+  }
+
+  if (statement.length > SQL_MAX_QUERY_LENGTH) {
+    return [['Syntax invalid: statement exceeds max length']];
   }
 
   var statementHandlers = [
@@ -115,23 +152,3 @@ function executeStatement(statement, handler) {
     return [['Query failed: ' + err.message]];
   }
 }
-
-/*
-function eliminateDup(input)
-{
-  var out = [];
-  for (var i = 0; i < input.length; i++)
-  {
-    var repeat = false;
-    for (var j = 0; j < out.length; j++)
-      if (input[i].join(" ") == out[j].join(" "))
-      {
-        repeat = true;
-        break;
-      }
-    if (!repeat)
-      out.push(input[i]);
-  }
-  return out;
-}
-*/
