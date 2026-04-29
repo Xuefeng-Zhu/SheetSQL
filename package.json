@@ -2,6 +2,9 @@
   "name": "sheetsql",
   "private": true,
   "scripts": {
-    "test": "node tests/sql.test.js"
+    "test": "node tests/sql.test.js && node tests/sheetio.test.js && node tests/ra.test.js && node tests/ra.property.test.js && node tests/planner.test.js && node tests/executors.test.js && node tests/parser.property.test.js"
+  },
+  "devDependencies": {
+    "fast-check": "3.22.0"
   }
 }

@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# clasp
+.clasp.json
+
+# Environment
+.env

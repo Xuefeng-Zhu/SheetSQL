@@ -1,38 +1,30 @@
-function deleteFrom(input) 
-{
-  var parse = simpleSqlParser.sql2ast(input);
-  var table = parse["DELETE FROM"][0];
-  var where = parse["WHERE"];
-  var tableArray = getTableFromSheet_(table);
-  var rows = resolveRowsFromWhere_(tableArray, where, dSelect);
-  
-  deleteHelp(table, rows);
-}
+/**
+ * Execute a DELETE FROM statement.
+ *
+ * Parses with simpleSqlParser, plans with planDelete, finds matching rows
+ * using Where.gs functions, and delegates row removal to Sheet_IO.
+ *
+ * @param {string} input - SQL DELETE statement
+ */
+function deleteFrom(input) {
+  var ast = simpleSqlParser.sql2ast(input);
+  var plan = planDelete(ast);
 
-function deleteHelp(tableName, rows)
-{
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(tableName);  
-  for (var i = 0; i < rows.length; i++)
-    sheet.deleteRow(rows[i] - i);
-}
+  // Read the table
+  var tableArray = sheetIO_readTable(plan.table);
 
-function dWhere(tableArray, term)
-{
-  return resolveRowsByLogic_(tableArray, term, dSelect);
-}
+  // Get matching row indices using Where.gs (handles simpleSqlParser WHERE format)
+  // Need to normalize WHERE values (strip quotes, convert numbers) for comparison
+  var normalizedWhere = normalizeSimpleWhere_(plan.where);
+  var rows = resolveRowsFromWhere_(tableArray, normalizedWhere, selectRowsByComparison_);
 
-function dIntersect(rows0, rows1)
-{
-  return intersectSortedRows_(rows0, rows1);
-}
+  // Convert tableArray indices to 1-based sheet row indices
+  // tableArray: row 0 = [tableName] (not in sheet), row 1 = headers (sheet row 1), row 2+ = data (sheet row 2+)
+  // So tableArray index i corresponds to sheet row i
+  var sheetRowIndices = [];
+  for (var i = 0; i < rows.length; i++) {
+    sheetRowIndices.push(rows[i]);
+  }
 
-function dUnion(rows0, rows1)
-{
-  return unionSortedRows_(rows0, rows1);
-}
-
-function dSelect(inputRange, attribute, operator, value)
-{
-  return selectRowsByComparison_(inputRange, attribute, operator, value);
+  sheetIO_deleteRows(plan.table, sheetRowIndices);
 }

@@ -33,20 +33,18 @@ function showPrompt() {
 
   var query = response.getResponseText();
   var outputRows = SQL(query);
-  var sheet = getOrCreateSqlSheet();
+  var sheet = sheetIO_getOrCreateSqlSheet();
   sheet.activate();
 
   if (outputRows && outputRows.length > 0) {
-    appendOutputRows_(sheet, outputRows);
+    sheetIO_appendOutputRows(sheet, outputRows);
   }
   sheet.appendRow([' ']);
 }
 
 
 function appendOutputRows_(sheet, outputRows) {
-  var normalizedRows = normalizeRows_(outputRows);
-  sheet.getRange(sheet.getLastRow() + 1, 1, normalizedRows.length, normalizedRows[0].length)
-      .setValues(normalizedRows);
+  sheetIO_appendOutputRows(sheet, outputRows);
 }
 
 function normalizeRows_(rows) {
@@ -77,22 +75,13 @@ function warning() {
       ui.ButtonSet.YES_NO);
 
   if (result === ui.Button.YES) {
-    var sheet = getOrCreateSqlSheet();
+    var sheet = sheetIO_getOrCreateSqlSheet();
     sheet.clear();
     ui.alert('History cleared.');
     return;
   }
 
   ui.alert('User canceled.');
-}
-
-function getOrCreateSqlSheet() {
-  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = spreadsheet.getSheetByName(SQL_SHEET_NAME);
-  if (sheet === null) {
-    sheet = spreadsheet.insertSheet(SQL_SHEET_NAME);
-  }
-  return sheet;
 }
 
 /**
@@ -143,6 +132,13 @@ function getStatementHandler(statement, statementHandlers) {
   return null;
 }
 
+function formatError_(err) {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
 function executeStatement(statement, handler) {
   try {
     var output = [[statement + SQL_SUCCESS_SUFFIX]];
@@ -154,6 +150,6 @@ function executeStatement(statement, handler) {
 
     return output;
   } catch (err) {
-    return [['Query failed: ' + err.message]];
+    return [['Query failed: ' + formatError_(err)]];
   }
 }
