@@ -1,57 +1,63 @@
+/**
+ * Execute an INSERT INTO statement.
+ *
+ * Parses with simpleSqlParser, plans with planInsert, validates columns,
+ * and delegates the row write to Sheet_IO.
+ *
+ * @param {string} input - SQL INSERT statement
+ */
 function insert(input) {
-  var parse = simpleSqlParser.sql2ast(input);
-  var insert = parse["INSERT INTO"];
-  var table = insert["table"];
-  var columns = insert["columns"];
-  var values = parse["VALUES"][0];
-  if (columns == null)
-    insertHelper1(table, values);
-  else
-    insertHelper2(table, columns, values);
-}
+  var ast = simpleSqlParser.sql2ast(input);
+  var plan = planInsert(ast);
 
-function insertHelper1(table, values)
-{
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(table);
-  var c = 1;
-  while (!sheet.getRange(1, c).isBlank())
-    c++;
-  
-  if (c - 1 != values.length)
-    throw "The number of columns does not match"
-  
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(table);
-  sheet.appendRow(values);
+  // Read the table to get column headers
+  var tableArray = sheetIO_readTable(plan.table);
+  var headers = tableArray[1];
 
-}
-
-function insertHelper2(table, columns, values)
-{
-  if (columns.length != values.length)
-    throw "The number of colums does not match the number of values";
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName(table);
-  var temp = [];
-  var c = 1;
-  var i = 0;
-  var cell = sheet.getRange(1, c);
-  while (!cell.isBlank())
-  {
-    if (cell.getValue() == columns[i])
-    {
-      temp.push( values[i]);
-      i++;
+  if (plan.columns === null) {
+    // Positional insert: validate value count matches column count per row
+    var outputRows = [];
+    for (var r = 0; r < plan.rows.length; r++) {
+      if (headers.length !== plan.rows[r].length) {
+        throw new Error("The number of columns does not match");
+      }
+      outputRows.push(plan.rows[r]);
     }
-    else 
-      temp.push(" ");
-    c++;
-    cell = sheet.getRange(1, c);
+    sheetIO_writeRows(plan.table, outputRows);
+  } else {
+    // Column-mapped insert: validate column count matches value count per row
+    var outputRows = [];
+    for (var r = 0; r < plan.rows.length; r++) {
+      var values = plan.rows[r];
+      if (plan.columns.length !== values.length) {
+        throw new Error("The number of colums does not match the number of values");
+      }
+
+      // Reject duplicate target columns
+      var seenColumns = {};
+      for (var i = 0; i < plan.columns.length; i++) {
+        if (seenColumns.hasOwnProperty(plan.columns[i])) {
+          throw new Error("Duplicate column: " + plan.columns[i]);
+        }
+        seenColumns[plan.columns[i]] = true;
+      }
+
+      // Map values to correct column positions
+      var row = [];
+      for (var c = 0; c < headers.length; c++) {
+        row.push("");
+      }
+
+      for (var i = 0; i < plan.columns.length; i++) {
+        var colIndex = findInArray_(headers, plan.columns[i]);
+        if (colIndex === -1) {
+          throw new Error("The columns do not match");
+        }
+        row[colIndex] = values[i];
+      }
+
+      outputRows.push(row);
+    }
+    sheetIO_writeRows(plan.table, outputRows);
   }
-  
-  if (i != columns.length)
-    throw "The columns do not match";
-  
-  sheet.appendRow(temp);
 }

@@ -31,7 +31,7 @@ function resolveRowsByLogic_(tableArray, term, rowSelector) {
     return unionSortedRows_(rowsLeft, rowsRight);
   }
 
-  throw 'Invalid logic operator : ' + logic;
+  throw new Error('Invalid logic operator : ' + logic);
 }
 
 function getAllDataRowIndexes_(tableArray) {
@@ -46,11 +46,11 @@ function selectRowsByComparison_(inputRange, attribute, operator, value) {
   var data = inputRange;
   var attributeIndex = findInArray_(data[1], attribute);
   if (attributeIndex === -1) {
-    throw 'Invalid attribute : ' + attribute;
+    throw new Error('Invalid attribute : ' + attribute);
   }
 
   if (!isValidComparisonOperator_(operator)) {
-    throw 'Invalid operator : ' + operator;
+    throw new Error('Invalid operator : ' + operator);
   }
 
   var outputRows = [];
