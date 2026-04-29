@@ -180,16 +180,20 @@ function planInsert(ast) {
   var table = insertInfo.table;
   var columns = insertInfo.columns || null;
 
-  var rawValues = ast['VALUES'][0];
-  var values = [];
-  for (var i = 0; i < rawValues.length; i++) {
-    values.push(parseValue(rawValues[i]));
+  var rawRows = ast['VALUES'];
+  var rows = [];
+  for (var r = 0; r < rawRows.length; r++) {
+    var row = [];
+    for (var i = 0; i < rawRows[r].length; i++) {
+      row.push(parseValue(rawRows[r][i]));
+    }
+    rows.push(row);
   }
 
   return {
     table: table,
     columns: columns,
-    values: values
+    rows: rows
   };
 }
 

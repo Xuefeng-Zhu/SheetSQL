@@ -7,10 +7,81 @@
  * @param {string|object} input - SQL string or pre-parsed AST
  * @returns {Array<Array>} result rows: [headers, ...dataRows] (no table name row)
  */
+/**
+ * Preprocess a SELECT SQL string to strip table aliases that the
+ * vendored SQLParser grammar does not support.
+ *
+ * Converts:
+ *   SELECT e.name FROM employees e JOIN projects p ON e.id = p.lead_id
+ * Into:
+ *   SELECT name FROM employees JOIN projects ON employees.id = projects.lead_id
+ *
+ * Handles both implicit aliases ("employees e") and explicit
+ * ("employees AS e") in FROM and JOIN clauses.
+ *
+ * @param {string} sql
+ * @returns {string}
+ */
+function normalizeTableAliases_(sql) {
+  // Keywords that can legally follow a table name (not an alias)
+  var kwPattern = /^(?:JOIN|LEFT|RIGHT|INNER|OUTER|ON|WHERE|GROUP|ORDER|HAVING|LIMIT|UNION|SET|VALUES|AS|SELECT|AND|OR|INTO)$/i;
+
+  // 1. Collect alias → table mappings from FROM / JOIN clauses
+  var aliasMap = {};
+
+  // Match: FROM/JOIN <table> AS <alias>  or  FROM/JOIN <table> <alias>
+  var aliasRegex = /\b(FROM|JOIN)\s+([A-Za-z_]\w*)(?:\s+AS\s+([A-Za-z_]\w*)|\s+([A-Za-z_]\w*))?/gi;
+  var m;
+  while ((m = aliasRegex.exec(sql)) !== null) {
+    var tableName = m[2];
+    var alias = m[3] || m[4];  // explicit AS alias or implicit alias
+    if (alias && !kwPattern.test(alias)) {
+      aliasMap[alias] = tableName;
+    }
+  }
+
+  // If no aliases found, return as-is
+  var aliases = Object.keys(aliasMap);
+  if (aliases.length === 0) {
+    return sql;
+  }
+
+  // 2. Remove alias declarations from FROM/JOIN clauses
+  var result = sql.replace(
+    /\b(FROM|JOIN)\s+([A-Za-z_]\w*)\s+AS\s+([A-Za-z_]\w*)/gi,
+    function (match, clause, table, alias) {
+      if (aliasMap.hasOwnProperty(alias)) {
+        return clause + ' ' + table;
+      }
+      return match;
+    }
+  );
+  result = result.replace(
+    /\b(FROM|JOIN)\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)/gi,
+    function (match, clause, table, maybeAlias) {
+      if (aliasMap.hasOwnProperty(maybeAlias)) {
+        return clause + ' ' + table;
+      }
+      return match;
+    }
+  );
+
+  // 3. Replace alias.column references with table.column throughout
+  //    Sort aliases longest-first to avoid partial matches
+  aliases.sort(function (a, b) { return b.length - a.length; });
+  for (var i = 0; i < aliases.length; i++) {
+    var a = aliases[i];
+    var re = new RegExp('\\b' + a + '\\.', 'g');
+    result = result.replace(re, aliasMap[a] + '.');
+  }
+
+  return result;
+}
+
 function selectQuery(input) {
   var ast;
   if (typeof input === "string") {
-    ast = SQLParser.parse(input);
+    ast = SQLParser.parse(normalizeTableAliases_(input));
   } else {
     ast = input;
   }
@@ -80,10 +151,14 @@ function selectQuery(input) {
 
   if (!star) {
     for (var i = 0; i < fields.length; i++) {
-      if (fields[i].field.value != null) {
-        attrs.push(fields[i].field.value);
+      var f = fields[i].field;
+      if (f.values != null) {
+        // Dotted reference like e.name — use the column name (last element)
+        attrs.push(f.values[f.values.length - 1]);
+      } else if (f.value != null) {
+        attrs.push(f.value);
       } else {
-        attrs.push(fields[i].field);
+        attrs.push(f);
       }
       names.push(fields[i].name);
     }

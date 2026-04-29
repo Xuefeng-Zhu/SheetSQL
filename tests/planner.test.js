@@ -346,9 +346,9 @@ test('planInsert: INSERT with columns', function () {
   assert.strictEqual(plan.columns.length, 2);
   assert.strictEqual(plan.columns[0], 'name');
   assert.strictEqual(plan.columns[1], 'salary');
-  assert.strictEqual(plan.values.length, 2);
-  assert.strictEqual(plan.values[0], 'Alice');
-  assert.strictEqual(plan.values[1], 80000);
+  assert.strictEqual(plan.rows.length, 1);
+  assert.strictEqual(plan.rows[0][0], 'Alice');
+  assert.strictEqual(plan.rows[0][1], 80000);
 });
 
 test('planInsert: INSERT without columns', function () {
@@ -357,28 +357,41 @@ test('planInsert: INSERT without columns', function () {
 
   assert.strictEqual(plan.table, 'employees');
   assert.strictEqual(plan.columns, null);
-  assert.strictEqual(plan.values.length, 4);
-  assert.strictEqual(plan.values[0], 1);
-  assert.strictEqual(plan.values[1], 'Bob');
-  assert.strictEqual(plan.values[2], 'Sales');
-  assert.strictEqual(plan.values[3], 60000);
+  assert.strictEqual(plan.rows.length, 1);
+  assert.strictEqual(plan.rows[0][0], 1);
+  assert.strictEqual(plan.rows[0][1], 'Bob');
+  assert.strictEqual(plan.rows[0][2], 'Sales');
+  assert.strictEqual(plan.rows[0][3], 60000);
 });
 
 test('planInsert: INSERT strips quotes from string values', function () {
   const ast = simpleSqlParser.sql2ast("INSERT INTO t VALUES ('hello', \"world\")");
   const plan = planInsert(ast);
 
-  assert.strictEqual(plan.values[0], 'hello');
-  assert.strictEqual(plan.values[1], 'world');
+  assert.strictEqual(plan.rows[0][0], 'hello');
+  assert.strictEqual(plan.rows[0][1], 'world');
 });
 
 test('planInsert: INSERT converts numeric strings to numbers', function () {
   const ast = simpleSqlParser.sql2ast("INSERT INTO t VALUES (42, 3.14, 'text')");
   const plan = planInsert(ast);
 
-  assert.strictEqual(plan.values[0], 42);
-  assert.strictEqual(plan.values[1], 3.14);
-  assert.strictEqual(plan.values[2], 'text');
+  assert.strictEqual(plan.rows[0][0], 42);
+  assert.strictEqual(plan.rows[0][1], 3.14);
+  assert.strictEqual(plan.rows[0][2], 'text');
+});
+
+test('planInsert: INSERT multiple rows', function () {
+  const ast = simpleSqlParser.sql2ast("INSERT INTO t VALUES (1, 'a'), (2, 'b'), (3, 'c')");
+  const plan = planInsert(ast);
+
+  assert.strictEqual(plan.rows.length, 3);
+  assert.strictEqual(plan.rows[0][0], 1);
+  assert.strictEqual(plan.rows[0][1], 'a');
+  assert.strictEqual(plan.rows[1][0], 2);
+  assert.strictEqual(plan.rows[1][1], 'b');
+  assert.strictEqual(plan.rows[2][0], 3);
+  assert.strictEqual(plan.rows[2][1], 'c');
 });
 
 // =========================================================================
