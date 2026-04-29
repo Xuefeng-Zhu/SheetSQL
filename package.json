@@ -1,0 +1,7 @@
+{
+  "name": "sheetsql",
+  "private": true,
+  "scripts": {
+    "test": "node tests/sql.test.js"
+  }
+}
