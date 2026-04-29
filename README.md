@@ -81,11 +81,32 @@ This project is written for Google Apps Script. A modern setup uses `clasp`:
 4. Create or clone a script project and push sources:
    ```bash
    clasp create --type sheets --title "SheetSQL"
+   ```
+5. Set local clasp root to `src` in your local `.clasp.json` (not committed):
+   ```json
+   {
+     "scriptId": "<YOUR_SCRIPT_ID>",
+     "rootDir": "src"
+   }
+   ```
+6. Push sources:
+   ```bash
    clasp push
    ```
 
-> Note: this repository currently stores source in `src/*.gs`. If you use clasp locally,
-> keep `.clasp.json` out of version control unless you intentionally want to share script IDs.
+> Note: keep `.clasp.json` out of version control unless you intentionally want to share script IDs.
+> The manifest is tracked at `src/appsscript.json` to keep scopes/runtime explicit for add-on publishing.
+
+
+## Google Sheets add-on best practices
+
+This project is designed to run as a Sheets-bound Apps Script/add-on. Recommended operational guidance:
+
+- Use the `onOpen` + `onInstall` trigger pair so menus are reliably available after install/update.
+- Prefer `SpreadsheetApp.getUi()` prompts/alerts over legacy `Browser.*` dialogs for editor add-ons.
+- Keep writes batched (`setValues`) when appending query results to reduce API calls and improve performance.
+- Avoid destructive actions on arbitrary active sheets; target the dedicated SQL history sheet explicitly.
+- Keep OAuth scopes minimal and explicit in `appsscript.json` when publishing an add-on.
 
 ## Code quality notes
 
