@@ -4,9 +4,14 @@ function update(input) {
   var set = parse["SET"];
   var where = parse["WHERE"];
   var tableArray = getTableFromSheet_(table);
-  var rows;
-  
-  if (where["logic"] == null)
+  var rows = [];
+
+  if (where == null)
+  {
+    for (var i = 2; i < tableArray.length; i++)
+      rows.push(i);
+  }
+  else if (where["logic"] == null)
   {
     var attr = where["left"];
     var operator = where["operator"];
@@ -86,7 +91,7 @@ function uWhere(tableArray, term)
 function uIntersect(rows0, rows1)
 {
 
-  var i = 0; j = 0;
+  var i = 0, j = 0;
   var out = [];
   while (i < rows0.length && j < rows1.length)
   {
@@ -159,7 +164,7 @@ function uSelect(inputRange, attribute, operator, value)
       match = data[i][attribute_idx] > value;
     else if (operator==">=")
       match = data[i][attribute_idx] >= value;
-    if (operator=="<=")
+    else if (operator=="<=")
       match = data[i][attribute_idx] <= value;
     else
       match = data[i][attribute_idx] == value;

@@ -1,3 +1,6 @@
+var SQL_SHEET_NAME = 'SQL';
+var SQL_SUCCESS_SUFFIX = ' success';
+
 function onOpen() {
   var ss = SpreadsheetApp.getActive();
   var items = [
@@ -13,83 +16,104 @@ function showPrompt() {
       'Please enter SQL statement you want to execute:',
       Browser.Buttons.OK_CANCEL);
 
-  if (result != 'cancel') {
-    var out = SQL(result);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("SQL");
-    sheet.activate();
-    for (var i = 0; i < out.length; i++)
-      sheet.appendRow(out[i]);
-    sheet.appendRow([" "]);
-  } 
-  else {
+  if (result === 'cancel') {
     Browser.msgBox('Thanks for using! Bye!');
+    return;
   }
+
+  var outputRows = SQL(result);
+  var sheet = getOrCreateSqlSheet();
+  sheet.activate();
+
+  for (var i = 0; i < outputRows.length; i++) {
+    sheet.appendRow(outputRows[i]);
+  }
+  sheet.appendRow([' ']);
 }
 
-function warning(){
+function warning() {
   var result = Browser.msgBox(
-    'Please confirm',
-    'Are you sure you want to clear all the history?',
-    Browser.Buttons.YES_NO);
+      'Please confirm',
+      'Are you sure you want to clear all the history?',
+      Browser.Buttons.YES_NO);
 
-  if (result == 'yes') {
+  if (result === 'yes') {
     var sheet = SpreadsheetApp.getActiveSheet();
     sheet.clear();
     Browser.msgBox('History Cleared.');
-  } else {
-    Browser.msgBox('User Canceled.');
+    return;
   }
+
+  Browser.msgBox('User Canceled.');
+}
+
+function getOrCreateSqlSheet() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(SQL_SHEET_NAME);
+  if (sheet === null) {
+    sheet = spreadsheet.insertSheet(SQL_SHEET_NAME);
+  }
+  return sheet;
 }
 
 
 /**
-* Execute the SQL query 
+* Execute the SQL query
 *
-* @param {string} Query to be executed 
+* @param {string} Query to be executed
 * @return {object} result.
 */
-
 function SQL(input) {
-  var out = [];
-  out.push([input + " success"]);
-  
-  if (input.toUpperCase().indexOf("SELECT") == 0){
-    out = out.concat(selectQuery(input));
-    return out;
+  var statement = normalizeStatement(input);
+  if (!statement) {
+    return [['Syntax invalid: empty statement']];
   }
-  
-  if (input.toUpperCase().indexOf("CREATE TABLE") == 0){
-    createTable(input);
-    return out;
+
+  var statementHandlers = [
+    {prefix: 'SELECT', execute: selectQuery, withSelectResult: true},
+    {prefix: 'CREATE TABLE', execute: createTable},
+    {prefix: 'DROP TABLE', execute: dropTable},
+    {prefix: 'ALTER TABLE', execute: alterTable},
+    {prefix: 'INSERT INTO', execute: insert},
+    {prefix: 'DELETE FROM', execute: deleteFrom},
+    {prefix: 'UPDATE', execute: update}
+  ];
+
+  var handler = getStatementHandler(statement, statementHandlers);
+  if (!handler) {
+    return [['Syntax invalid']];
   }
-  
-  if (input.toUpperCase().indexOf("DROP TABLE") == 0){
-    dropTable(input);
-    return out;
+
+  return executeStatement(statement, handler);
+}
+
+function normalizeStatement(input) {
+  return String(input || '').replace(/;\s*$/, '').trim();
+}
+
+function getStatementHandler(statement, statementHandlers) {
+  var upperStatement = statement.toUpperCase();
+  for (var i = 0; i < statementHandlers.length; i++) {
+    if (upperStatement.indexOf(statementHandlers[i].prefix) === 0) {
+      return statementHandlers[i];
+    }
   }
-  
-  if (input.toUpperCase().indexOf("ALTER TABLE") == 0){
-    alterTable(input);
-    return out;
+  return null;
+}
+
+function executeStatement(statement, handler) {
+  try {
+    var output = [[statement + SQL_SUCCESS_SUFFIX]];
+    var result = handler.execute(statement);
+
+    if (handler.withSelectResult) {
+      output = output.concat(result || []);
+    }
+
+    return output;
+  } catch (err) {
+    return [['Query failed: ' + err.message]];
   }
-  
-  if (input.toUpperCase().indexOf("INSERT INTO") == 0){
-    insert(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("DELETE FROM") == 0){
-    deleteFrom(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("UPDATE") == 0){
-    update(input);
-    return out;
-  }
-  
-  
-  return [["Syntax invalid"]];
 }
 
 /*
@@ -97,7 +121,7 @@ function eliminateDup(input)
 {
   var out = [];
   for (var i = 0; i < input.length; i++)
-  {  
+  {
     var repeat = false;
     for (var j = 0; j < out.length; j++)
       if (input[i].join(" ") == out[j].join(" "))
