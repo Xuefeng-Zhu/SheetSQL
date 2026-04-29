@@ -15,12 +15,15 @@ function showPrompt() {
 
   if (result != 'cancel') {
     var out = SQL(result);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("SQL");
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SQL');
+    if (sheet === null) {
+      sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet('SQL');
+    }
     sheet.activate();
     for (var i = 0; i < out.length; i++)
       sheet.appendRow(out[i]);
-    sheet.appendRow([" "]);
-  } 
+    sheet.appendRow([' ']);
+  }
   else {
     Browser.msgBox('Thanks for using! Bye!');
   }
@@ -43,53 +46,61 @@ function warning(){
 
 
 /**
-* Execute the SQL query 
+* Execute the SQL query
 *
-* @param {string} Query to be executed 
+* @param {string} Query to be executed
 * @return {object} result.
 */
 
 function SQL(input) {
-  var out = [];
-  out.push([input + " success"]);
-  
-  if (input.toUpperCase().indexOf("SELECT") == 0){
-    out = out.concat(selectQuery(input));
-    return out;
+  var statement = String(input || '').trim();
+  if (!statement) {
+    return [['Syntax invalid: empty statement']];
   }
-  
-  if (input.toUpperCase().indexOf("CREATE TABLE") == 0){
-    createTable(input);
-    return out;
+
+  var upperStatement = statement.toUpperCase();
+
+  try {
+    if (upperStatement.indexOf('SELECT') == 0) {
+      var out = [[statement + ' success']];
+      out = out.concat(selectQuery(statement));
+      return out;
+    }
+
+    if (upperStatement.indexOf('CREATE TABLE') == 0) {
+      createTable(statement);
+      return [[statement + ' success']];
+    }
+
+    if (upperStatement.indexOf('DROP TABLE') == 0) {
+      dropTable(statement);
+      return [[statement + ' success']];
+    }
+
+    if (upperStatement.indexOf('ALTER TABLE') == 0) {
+      alterTable(statement);
+      return [[statement + ' success']];
+    }
+
+    if (upperStatement.indexOf('INSERT INTO') == 0) {
+      insert(statement);
+      return [[statement + ' success']];
+    }
+
+    if (upperStatement.indexOf('DELETE FROM') == 0) {
+      deleteFrom(statement);
+      return [[statement + ' success']];
+    }
+
+    if (upperStatement.indexOf('UPDATE') == 0) {
+      update(statement);
+      return [[statement + ' success']];
+    }
+  } catch (err) {
+    return [['Query failed: ' + err.message]];
   }
-  
-  if (input.toUpperCase().indexOf("DROP TABLE") == 0){
-    dropTable(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("ALTER TABLE") == 0){
-    alterTable(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("INSERT INTO") == 0){
-    insert(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("DELETE FROM") == 0){
-    deleteFrom(input);
-    return out;
-  }
-  
-  if (input.toUpperCase().indexOf("UPDATE") == 0){
-    update(input);
-    return out;
-  }
-  
-  
-  return [["Syntax invalid"]];
+
+  return [['Syntax invalid']];
 }
 
 /*
@@ -97,7 +108,7 @@ function eliminateDup(input)
 {
   var out = [];
   for (var i = 0; i < input.length; i++)
-  {  
+  {
     var repeat = false;
     for (var j = 0; j < out.length; j++)
       if (input[i].join(" ") == out[j].join(" "))
