@@ -1,3 +1,6 @@
+var SQL_SHEET_NAME = 'SQL';
+var SQL_SUCCESS_SUFFIX = ' success';
+
 function onOpen() {
   var ss = SpreadsheetApp.getActive();
   var items = [
@@ -13,35 +16,44 @@ function showPrompt() {
       'Please enter SQL statement you want to execute:',
       Browser.Buttons.OK_CANCEL);
 
-  if (result != 'cancel') {
-    var out = SQL(result);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SQL');
-    if (sheet === null) {
-      sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet('SQL');
-    }
-    sheet.activate();
-    for (var i = 0; i < out.length; i++)
-      sheet.appendRow(out[i]);
-    sheet.appendRow([' ']);
-  }
-  else {
+  if (result === 'cancel') {
     Browser.msgBox('Thanks for using! Bye!');
+    return;
   }
+
+  var outputRows = SQL(result);
+  var sheet = getOrCreateSqlSheet();
+  sheet.activate();
+
+  for (var i = 0; i < outputRows.length; i++) {
+    sheet.appendRow(outputRows[i]);
+  }
+  sheet.appendRow([' ']);
 }
 
-function warning(){
+function warning() {
   var result = Browser.msgBox(
-    'Please confirm',
-    'Are you sure you want to clear all the history?',
-    Browser.Buttons.YES_NO);
+      'Please confirm',
+      'Are you sure you want to clear all the history?',
+      Browser.Buttons.YES_NO);
 
-  if (result == 'yes') {
+  if (result === 'yes') {
     var sheet = SpreadsheetApp.getActiveSheet();
     sheet.clear();
     Browser.msgBox('History Cleared.');
-  } else {
-    Browser.msgBox('User Canceled.');
+    return;
   }
+
+  Browser.msgBox('User Canceled.');
+}
+
+function getOrCreateSqlSheet() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(SQL_SHEET_NAME);
+  if (sheet === null) {
+    sheet = spreadsheet.insertSheet(SQL_SHEET_NAME);
+  }
+  return sheet;
 }
 
 
@@ -51,56 +63,57 @@ function warning(){
 * @param {string} Query to be executed
 * @return {object} result.
 */
-
 function SQL(input) {
-  var statement = String(input || '').trim();
+  var statement = normalizeStatement(input);
   if (!statement) {
     return [['Syntax invalid: empty statement']];
   }
 
+  var statementHandlers = [
+    {prefix: 'SELECT', execute: selectQuery, withSelectResult: true},
+    {prefix: 'CREATE TABLE', execute: createTable},
+    {prefix: 'DROP TABLE', execute: dropTable},
+    {prefix: 'ALTER TABLE', execute: alterTable},
+    {prefix: 'INSERT INTO', execute: insert},
+    {prefix: 'DELETE FROM', execute: deleteFrom},
+    {prefix: 'UPDATE', execute: update}
+  ];
+
+  var handler = getStatementHandler(statement, statementHandlers);
+  if (!handler) {
+    return [['Syntax invalid']];
+  }
+
+  return executeStatement(statement, handler);
+}
+
+function normalizeStatement(input) {
+  return String(input || '').replace(/;\s*$/, '').trim();
+}
+
+function getStatementHandler(statement, statementHandlers) {
   var upperStatement = statement.toUpperCase();
+  for (var i = 0; i < statementHandlers.length; i++) {
+    if (upperStatement.indexOf(statementHandlers[i].prefix) === 0) {
+      return statementHandlers[i];
+    }
+  }
+  return null;
+}
 
+function executeStatement(statement, handler) {
   try {
-    if (upperStatement.indexOf('SELECT') == 0) {
-      var out = [[statement + ' success']];
-      out = out.concat(selectQuery(statement));
-      return out;
+    var output = [[statement + SQL_SUCCESS_SUFFIX]];
+    var result = handler.execute(statement);
+
+    if (handler.withSelectResult) {
+      output = output.concat(result || []);
     }
 
-    if (upperStatement.indexOf('CREATE TABLE') == 0) {
-      createTable(statement);
-      return [[statement + ' success']];
-    }
-
-    if (upperStatement.indexOf('DROP TABLE') == 0) {
-      dropTable(statement);
-      return [[statement + ' success']];
-    }
-
-    if (upperStatement.indexOf('ALTER TABLE') == 0) {
-      alterTable(statement);
-      return [[statement + ' success']];
-    }
-
-    if (upperStatement.indexOf('INSERT INTO') == 0) {
-      insert(statement);
-      return [[statement + ' success']];
-    }
-
-    if (upperStatement.indexOf('DELETE FROM') == 0) {
-      deleteFrom(statement);
-      return [[statement + ' success']];
-    }
-
-    if (upperStatement.indexOf('UPDATE') == 0) {
-      update(statement);
-      return [[statement + ' success']];
-    }
+    return output;
   } catch (err) {
     return [['Query failed: ' + err.message]];
   }
-
-  return [['Syntax invalid']];
 }
 
 /*
