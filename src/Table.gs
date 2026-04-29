@@ -51,19 +51,18 @@ function alterTable(input)
     throw 'Invalid sheet : ' + tableName;
   }
 
-  if (operation == 'ADD')
+  if (operation === 'ADD')
   {
-    var c = 1;
-    var cell = sheet.getRange(1, c);
-    while (!cell.isBlank())
-    {
-      if (cell.getValue() == column)
+    var existingColumns = getHeaderValues_(sheet);
+    for (var i = 0; i < existingColumns.length; i++) {
+      if (existingColumns[i] === column) {
         throw 'The column already exists!';
-      c++;
-      cell = sheet.getRange(1, c);
+      }
     }
-    cell.setValue(column);
-    cell.setFontWeight('bold');
+    var nextColumnIndex = existingColumns.length + 1;
+    var headerCell = sheet.getRange(1, nextColumnIndex);
+    headerCell.setValue(column);
+    headerCell.setFontWeight('bold');
     return;
   }
 
@@ -92,14 +91,28 @@ function parseAttributeList_(rawAttrs) {
 }
 
 function getColumnIndex_(sheet, columnName) {
-  var c = 1;
-  var cell = sheet.getRange(1, c);
-  while (!cell.isBlank()) {
-    if (cell.getValue() == columnName) {
-      return c;
+  var headerValues = getHeaderValues_(sheet);
+  for (var i = 0; i < headerValues.length; i++) {
+    if (headerValues[i] === columnName) {
+      return i + 1;
     }
-    c++;
-    cell = sheet.getRange(1, c);
   }
   return -1;
+}
+
+function getHeaderValues_(sheet) {
+  var lastColumn = sheet.getLastColumn();
+  if (lastColumn < 1) {
+    return [];
+  }
+
+  var headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  var out = [];
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i] === '') {
+      break;
+    }
+    out.push(headers[i]);
+  }
+  return out;
 }

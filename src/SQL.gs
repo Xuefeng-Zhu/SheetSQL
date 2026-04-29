@@ -2,13 +2,18 @@ var SQL_SHEET_NAME = 'SQL';
 var SQL_SUCCESS_SUFFIX = ' success';
 var SQL_MENU_NAME = 'SQL';
 var SQL_MAX_QUERY_LENGTH = 50000;
+var SQL_MENU_ITEMS = [
+  {label: 'Show prompt', handler: 'showPrompt'},
+  {label: 'Clear History', handler: 'warning'}
+];
 
 function onOpen(e) {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu(SQL_MENU_NAME)
-      .addItem('Show prompt', 'showPrompt')
-      .addItem('Clear History', 'warning')
-      .addToUi();
+  var menu = ui.createMenu(SQL_MENU_NAME);
+  for (var i = 0; i < SQL_MENU_ITEMS.length; i++) {
+    menu.addItem(SQL_MENU_ITEMS[i].label, SQL_MENU_ITEMS[i].handler);
+  }
+  menu.addToUi();
 }
 
 function onInstall(e) {
